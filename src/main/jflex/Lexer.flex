@@ -1,7 +1,6 @@
 package com.setmasterx;
 
-import java.util.ArrayList;
-import java.util.List;
+import java_cup.runtime.Symbol;
 
 %%
 
@@ -10,18 +9,15 @@ import java.util.List;
 %unicode
 %line
 %column
-%type Token
-%function nextToken
+%cup
 
 %{
-    private final List<LexicalError> errors = new ArrayList<>();
-
-    public List<LexicalError> getErrors() {
-        return errors;
+    private Symbol symbol(TokenType type) {
+        return new Symbol(type.ordinal(), yyline + 1, yycolumn + 1, yytext());
     }
 
-    private Token token(TokenType type) {
-        return new Token(type, yytext(), yyline + 1, yycolumn + 1);
+    private Symbol symbol(TokenType type, Object value) {
+        return new Symbol(type.ordinal(), yyline + 1, yycolumn + 1, value);
     }
 %}
 
@@ -29,35 +25,47 @@ import java.util.List;
     return null;
 %eofval}
 
-WHITESPACE = [ \t\r\n\f]+
-ID         = [a-zA-Z_][a-zA-Z0-9_]*
-INT        = [0-9]+
-CHAR       = \'([^\\\'\n\r]|\\.)\'
+Letra         = [A-Za-zÁÉÍÓÚáéíóúÑñ]
+Digito        = [0-9]
+Identificador = {Letra}({Letra}|{Digito}|_)*
+Numero        = {Digito}+
+Espacios      = [ \t\r\n\f]+
 
 %%
 
-{WHITESPACE}            { /* Ignorar espacios */ }
+{Espacios}                { /* Ignorar */ }
 
-"SET_START"             { return token(TokenType.SET_START); }
-"SET_END"               { return token(TokenType.SET_END); }
-"SI"                    { return token(TokenType.SI); }
-"ENTONCES"              { return token(TokenType.ENTONCES); }
-"PARA_CADA"             { return token(TokenType.PARA_CADA); }
-"EN"                    { return token(TokenType.EN); }
-"VENN"                  { return token(TokenType.VENN); }
+// Tokens de estructura
+"SET_START"               { return symbol(TokenType.SET_START); }
+"SET_END"                 { return symbol(TokenType.SET_END); }
+"INICIO"                  { return symbol(TokenType.INICIO); }
+"FIN"                     { return symbol(TokenType.FIN); }
+"SI"                      { return symbol(TokenType.SI); }
+"ENTONCES"                { return symbol(TokenType.ENTONCES); }
+"PARA_CADA"               { return symbol(TokenType.PARA_CADA); }
+"EN"                      { return symbol(TokenType.EN); }
+"VENN"                    { return symbol(TokenType.VENN); }
 
-"U"                     { return token(TokenType.UNION); }
-"∩"                     { return token(TokenType.INTERSECCION); }
-"-"                     { return token(TokenType.DIFERENCIA); }
-"∆"                     { return token(TokenType.DIFERENCIA_SIMETRICA); }
+// Operadores de conjuntos
+"U"                       { return symbol(TokenType.UNION); }
+"\u2229"                  { return symbol(TokenType.INTERSECCION); }
+"-"                       { return symbol(TokenType.DIFERENCIA); }
+"\u2206"                  { return symbol(TokenType.DIFERENCIA_SIMETRICA); }
 
-"⊆"                     { return token(TokenType.CONTENCION); }
-"∈"                     { return token(TokenType.PERTENENCIA); }
-"=="                    { return token(TokenType.IGUALDAD); }
+// Operadores relacionales y símbolos
+"\u2286"                  { return symbol(TokenType.CONTENCION); }
+"\u2208"                  { return symbol(TokenType.PERTENENCIA); }
+"=="                      { return symbol(TokenType.IGUALDAD); }
+"="                       { return symbol(TokenType.ASIGNACION); }
+"{"                       { return symbol(TokenType.LLAVE_ABRE); }
+"}"                       { return symbol(TokenType.LLAVE_CIERRA); }
+"("                       { return symbol(TokenType.PAREN_ABRE); }
+")"                       { return symbol(TokenType.PAREN_CIERRA); }
+","                       { return symbol(TokenType.COMA); }
 
-{INT}                   { return token(TokenType.ENTERO); }
-{CHAR}                  { return token(TokenType.CARACTER); }
-{ID}                    { return token(TokenType.IDENTIFICADOR); }
+// Literales
+{Numero}                  { return symbol(TokenType.ENTERO, Integer.parseInt(yytext())); }
+{Identificador}           { return symbol(TokenType.IDENTIFICADOR); }
 
-.                       { errors.add(new LexicalError(yytext(), yyline + 1, yycolumn + 1)); }
-
+// Regla crítica de error (siempre al final)
+[^]                       { return symbol(TokenType.ERROR, new LexicalError(yytext(), yyline + 1, yycolumn + 1)); }

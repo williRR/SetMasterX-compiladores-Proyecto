@@ -1,0 +1,8 @@
+SET_START
+MiConjunto = {1, 2, 3, 4}
+OtroConjunto = {a, b, c}
+Resultado = MiConjunto U OtroConjunto
+SI (Resultado == {1}) ENTONCES {
+    VENN(MiConjunto ∩ OtroConjunto)
+}
+SET_END
