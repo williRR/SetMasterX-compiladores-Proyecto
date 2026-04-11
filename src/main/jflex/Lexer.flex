@@ -33,7 +33,11 @@ Espacios      = [ \t\r\n\f]+
 
 %%
 
-{Espacios}                { /* Ignorar */ }
+{Espacios}                { /* ignorar */ }
+
+// Comentarios
+"//".*                    { /* ignorar */ }
+[/][*][^*]*[*]+([^/*][^*]*[*]+)*[/]   { /* ignorar */ }
 
 // Tokens de estructura
 "SET_START"               { return symbol(TokenType.SET_START); }
